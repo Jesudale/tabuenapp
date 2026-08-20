@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <script data-ionic="inject">
+    (function(w){var i=w.Ionic=w.Ionic||{};i.version='3.9.2';i.angular='5.2.10';i.staticDir='build/';})(window);
+  </script>
+  <meta charset="UTF-8">
+  <title>TaBuena</title>
+  <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="msapplication-tap-highlight" content="no">
+
+  <link rel="icon" type="image/x-icon" href="assets/icon/favicon.ico">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4e8ef7">
+
+  <!-- add to homescreen for ios -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <!-- cordova.js required for cordova apps (remove if not needed) -->
+  <script src="cordova.js"></script>
+
+  <script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLeAnIngz5ZlRREvWdfJU_SwNygbTugAw&libraries=places&callback=Function.prototype">
+</script>
+
+  <base href="./" />
+
+  <!-- un-comment this code to enable service worker
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log('service worker installed'))
+        .catch(err => console.error('Error', err));
+    }
+  </script>-->
+
+  
+<script>
+  /* if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+      .then(registration => {
+          console.log('Service Worker registrado con éxito:', registration);
+
+          // Detectar actualizaciones
+          registration.onupdatefound = () => {
+              const installingWorker = registration.installing;
+              installingWorker.onstatechange = () => {
+                  if (installingWorker.state === 'installed') {
+                      if (navigator.serviceWorker.controller) {
+                          // Nueva versión disponible
+                          console.log('Nueva versión disponible. Recargando...');
+                          // Enviar mensaje al service worker para saltar la espera
+                          navigator.serviceWorker.controller.postMessage('skipWaiting');
+                          // Recargar la página
+                          window.location.reload();
+                      } else {
+                          // Contenido precacheado
+                          console.log('Contenido precacheado listo.');
+                      }
+                  }
+              };
+          };
+      })
+      .catch(error => {
+          console.error('Error al registrar el Service Worker:', error);
+      });
+
+      let refreshing;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          window.location.reload();
+          refreshing = true;
+      });
+  } */
+
+  if ('serviceWorker' in navigator) {
+          
+                // Function to generate a UUID
+            function generateUUID() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+
+            // Store the UUID in localStorage
+            const userIdentifier = localStorage.getItem('userIdentifier') || generateUUID();
+            localStorage.setItem('userIdentifier', userIdentifier);
+
+
+           // Verificar permisos de notificación
+           console.log('solicitanto permisos 1');
+            Notification.requestPermission().then(permission => {
+              console.log('solicitanto permisos 2 '+permission);
+              if (permission === 'default') {
+                console.error('No decision sobre las notificaciones');
+                return;
+              }
+              if (permission !== 'granted') {
+                console.error('No se otorgaron los permisos necesarios para las notificaciones');
+                return;
+              }
+              console.log('Permisos de notificación otorgados');    
+            });
+          
+            navigator.serviceWorker.register('service-worker.js').then(registration => {
+            console.log('Service Worker registrado con el alcance:', registration.scope);
+           
+                // subscribeToPush();
+              }).catch(error => console.log('Error en el registro del Service Worker:', error));
+            }
+
+        function urlBase64ToUint8Array(base64String) {
+          const padding = '='.repeat((4 - base64String.length % 4) % 4);
+          const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+          const rawData = atob(base64);
+          return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+        }
+
+        function subscribeToPush() {
+          console.log('Intentando suscribir a notificaciones push');
+          navigator.serviceWorker.ready.then(registration => {
+            registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array('BLwClCskfmHIjUTFvhRf654BJEkzFOvPlT3KLw3l-esAAVcLwU46qR4j0E7owQPDWoLJ3MZmKN7KZZdcxsL8DZA')
+            }).then(subscription => {
+              console.log('Suscripción exitosa');
+              saveSubscription(subscription);
+            }).catch(error => console.error('Error en la suscripción:', error));
+          });
+        }
+
+        function saveSubscription(subscription) {
+          console.log('Llegó a saveSubscription', subscription);
+         // const userIdentifier = "52951"; // usar un identificador único para el usuario
+         const userIdentifier = localStorage.getItem('userIdentifier'); // Obtener el identificador de usuario del almacenamiento local
+
+
+          if (!userIdentifier) {
+            console.error('No se encontró el identificador de usuario en el almacenamiento local');
+            return;
+          }
+
+          fetch('https://yghrphnvtfxgmqoecyql.supabase.co/rest/v1/push_subscriptions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin':'*',
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnaHJwaG52dGZ4Z21xb2VjeXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDg1NjE5MjAsImV4cCI6MjAyNDEzNzkyMH0.f1wuaH4SG_IpHdgHryarqIJvQpsEvlBBRahWvxS7c2A',
+              'Authorization': 'Bearer ' +'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnaHJwaG52dGZ4Z21xb2VjeXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDg1NjE5MjAsImV4cCI6MjAyNDEzNzkyMH0.f1wuaH4SG_IpHdgHryarqIJvQpsEvlBBRahWvxS7c2A',
+            },
+            body: JSON.stringify({ user_identifier: userIdentifier, subscription })
+          });
+        }
+
+        // Inicia el proceso de registro del Service Worker y la suscripción
+        if (Notification.permission === 'default') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              subscribeToPush();
+            } else {
+              console.error('Permiso de notificaciones no concedido');
+            }
+          });
+        } else if (Notification.permission === 'granted') {
+          subscribeToPush();
+        } else {
+          console.error('Permiso de notificaciones no concedido');
+        }
+
+
+</script>
+
+
+  <link href="build/main.css" rel="stylesheet">
+  <link href="assets/libs/leaflet/leaflet.css" rel="stylesheet">
+
+</head>
+<body>
+
+  <div style="text-align:center;padding-top: 50%;"> 
+  <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+  <div class="texto-ejemplo">
+    ¡Gracias por visitar nuestro establecimiento, en un momento la aplicación estará lista! 
+  </div>
+  </div> 
+
+
+  
+  <!-- Ionic's root component and where the app will load -->
+  <ion-app></ion-app>
+
+  <!-- The polyfills js is generated during the build process -->
+  <script src="build/polyfills.js"></script>
+
+  <!-- The vendor js is generated during the build process
+       It contains all of the dependencies in node_modules -->
+  <script src="build/vendor.js"></script>
+
+  <!-- The main bundle js is generated during the build process -->
+  <script src="build/main.js"></script>
+  <script src="assets/libs/awesome-markers/leaflet.awesome-markers.js"></script>
+</body>
+</html>
